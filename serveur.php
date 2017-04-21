@@ -2,7 +2,7 @@
 
 header('Access-Control-Allow-Origin: *');
 
-require_once "simple_dom_html.php";
+require_once "lib/simple_dom_html.php";
 
 try {
     $bdd = new PDO('mysql:host=localhost;dbname=medoc', 'root', '');
@@ -63,9 +63,9 @@ class OpenMedoc {
 		if(empty($medocs)) {
 			echo "no medoc empty";
 
-			$page = $_GET['page'] ?? '1';
+			$page = isset($_GET['page']) ? $_GET['page'] : '1';
 			$page = intval($page);
-			$previouspage = $_GET['previouspage'] ?? $page - 1;
+			$page = isset($_GET['previouspage']) ? $_GET['previouspage'] : '1';
 			$previouspage = intval($previouspage);
 			$previouspage++;
 			$page++;
@@ -126,14 +126,10 @@ class OpenMedoc {
 		echo $cis."<br>";
 
 		$url = "http://base-donnees-publique.medicaments.gouv.fr/affichageDoc.php?specid=".$cis."&typedoc=R";
-
 		$html = file_get_html($url);
-
-		// var_dump($html->find('#textDocument')[0]); die;
-
 		$sideEffect = "Aucun";
 
-		if(isset($html->find('#textDocument')[0])) {
+		if($html && isset($html->find('#textDocument')[0])) {
 
 			$response = $html->find('#textDocument')[0]->children;
 
@@ -153,7 +149,7 @@ class OpenMedoc {
 					$sideEffect .= $element->plaintext."<br />";
 				}
 
-				if($element->class === "AmmAnnexeTitre2" && $element->children[0]->attr['name'] === "RcpEffetsIndesirables") {
+				if($element->class === "AmmAnnexeTitre2" && isset($element->children[0]) && $element->children[0]->attr['name'] === "RcpEffetsIndesirables") {
 					$allowNext = true;
 				}
 			}
@@ -161,8 +157,6 @@ class OpenMedoc {
 
 
 		return $sideEffect;
-
-		// $sideEffect = utf8_decode(utf8_encode($sideEffect));
 	}
 }
 
@@ -377,7 +371,7 @@ function treatment($maxPages = 10) {
 
 	if($majToDo) {
 
-		$page = $_GET['page'] ?? '1';
+		$page = isset($_GET['page']) ? $_GET['page'] : '1';
 		$page = intval($page);
 
 		if($page < $maxPages) {
@@ -390,4 +384,4 @@ function treatment($maxPages = 10) {
 	}
 }
 
-treatment(80);
+treatment(140);
