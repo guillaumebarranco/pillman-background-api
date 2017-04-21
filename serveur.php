@@ -4,8 +4,10 @@ header('Access-Control-Allow-Origin: *');
 
 require_once "lib/simple_dom_html.php";
 
+$conf = json_decode(file_get_contents('conf.json'));
+
 try {
-    $bdd = new PDO('mysql:host=localhost;dbname=medoc', 'root', '');
+    $bdd = new PDO('mysql:host='.$conf->host.';dbname='.$conf->database, $conf->user, $conf->password);
     $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $bdd->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 }
@@ -55,6 +57,7 @@ class OpenMedoc {
 	// Get all medicaments from our DB which have just name and cis
 	public function getMedocs() {
 		global $dbMedoc;
+		global $conf;
 		$limit = 15;
 
 		$medocs = $dbMedoc->getAllEmpty($limit);
@@ -65,7 +68,7 @@ class OpenMedoc {
 
 			$page = isset($_GET['page']) ? $_GET['page'] : '1';
 			$page = intval($page);
-			$page = isset($_GET['previouspage']) ? $_GET['previouspage'] : '1';
+			$previouspage = isset($_GET['previouspage']) ? $_GET['previouspage'] : '1';
 			$previouspage = intval($previouspage);
 			$previouspage++;
 			$page++;
@@ -74,7 +77,7 @@ class OpenMedoc {
 				die;
 			}
 
-			echo "<script>location.href = 'http://localhost/medoc/serveur.php?previouspage=".$previouspage."&page=".$page."';</script>";
+			echo "<script>location.href = ".$conf->url."?previouspage=".$previouspage."&page=".$page."';</script>";
 			exit();
 		}
 
