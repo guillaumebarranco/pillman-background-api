@@ -58,7 +58,7 @@ class OpenMedoc {
 	public function getMedocs() {
 		global $dbMedoc;
 		global $conf;
-		$limit = 15;
+		$limit = 30;
 
 		$medocs = $dbMedoc->getAllEmpty($limit);
 		echo "got medocs<br>";
