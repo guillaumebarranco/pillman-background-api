@@ -77,7 +77,7 @@ class OpenMedoc {
 				die;
 			}
 
-			echo "<script>location.href = ".$conf->url."?previouspage=".$previouspage."&page=".$page."';</script>";
+			echo "<script>location.href = '".$conf->url."?previouspage=".$previouspage."&page=".$page."';</script>";
 			exit();
 		}
 
