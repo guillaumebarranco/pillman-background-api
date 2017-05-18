@@ -1,13 +1,17 @@
 <?php
 
-header('Access-Control-Allow-Origin: *');
+$confPath = "conf.json";
+
+if(!file_exists($confPath)) {
+	die('Missing '.$confPath.' file. Use the readme to get the file structure then create it.');
+}
+
+$conf = json_decode(file_get_contents($confPath));
 
 require_once "lib/simple_dom_html.php";
 
-$conf = json_decode(file_get_contents('conf.json'));
-
 try {
-    $bdd = new PDO('mysql:host='.$conf->host.';dbname='.$conf->database, $conf->user, $conf->password);
+    $bdd = new PDO('mysql:host='.$conf->host.';dbname='.$conf->database, $conf->user, $conf->password, array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8'));
     $bdd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $bdd->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 }
@@ -43,11 +47,10 @@ class OpenMedoc {
 	// Get all medicaments from Open Medicaments API from given search
 	public function getAll($query = 'a', $page = 1000, $limit = 100) {
 		global $dbMedoc;
+
 		$url = "https://www.open-medicaments.fr/api/v1/medicaments?query=".$query."&page=".$page."&limit=".$limit;
 
 		$result = json_decode(file_get_contents($url));
-
-		// var_dump(count($result)); die;
 
 		foreach($result as $element) {
 			$dbMedoc->insertMedoc($element->codeCIS, $element->denomination);
@@ -58,6 +61,7 @@ class OpenMedoc {
 	public function getMedocs() {
 		global $dbMedoc;
 		global $conf;
+
 		$limit = 30;
 
 		$medocs = $dbMedoc->getAllEmpty($limit);
@@ -74,7 +78,7 @@ class OpenMedoc {
 			$page++;
 
 			if(isset($_GET['previouspage']) && isset($_GET['page']) && $_GET['previouspage'] === $_GET['page']) {
-				die;
+				die('end');
 			}
 
 			echo "<script>location.href = '".$conf->url."?previouspage=".$previouspage."&page=".$page."';</script>";
@@ -106,10 +110,10 @@ class OpenMedoc {
 
 		$response = json_decode(file_get_contents($url));
 
+		$medoc['forme'] = $medoc['cis'];
+
 		if(isset($response->formePharmaceutique)) {
 			$medoc['forme'] = $response->formePharmaceutique;
-		} else {
-			$medoc['forme'] = $medoc['cis'];
 		}
 
 		// Denomination
@@ -120,6 +124,7 @@ class OpenMedoc {
 		}
 
 		$result = $dbMedoc->updateMedoc($medoc['cis'], makeUTF8($medoc['forme']), makeUTF8($medoc['denomination']), $this->getSideEffectsFromCIS($medoc['cis']));
+
 		return $result;
 	}
 
@@ -136,7 +141,6 @@ class OpenMedoc {
 
 			$response = $html->find('#textDocument')[0]->children;
 
-			$amm = "";
 			$allowNext = false;
 			$sideEffect = "";
 
@@ -157,7 +161,6 @@ class OpenMedoc {
 				}
 			}
 		}
-
 
 		return $sideEffect;
 	}
@@ -185,8 +188,8 @@ class Medoc {
 			try {
 				$insert = $bdd->prepare("INSERT INTO `medicaments` (`name`, `cis`, `denomination`, `side_effect`, `forme`, `indications`, `family`) VALUES (:name, :cis, '', '', '', '', 0);");
 				
-				$insert->bindParam(':cis', $cis, \PDO::PARAM_STR);
-				$insert->bindParam(':name', $name, \PDO::PARAM_STR);
+				$insert->bindParam(':cis', $cis);
+				$insert->bindParam(':name', $name);
 				$insert->execute();
 
 				$status = "success";
@@ -325,6 +328,10 @@ $dbMedoc = new Medoc();
 $openMedoc = new OpenMedoc();
 
 if(isset($_GET['function'])) {
+	handleCalledFunctions();
+}
+
+function handleCalledFunctions() {
 
 	if($_GET['function'] === "getMedocs") {
 		echo json_encode($dbMedoc->getAll($_GET['limit']));
@@ -339,27 +346,18 @@ if(isset($_GET['function'])) {
 	}
 
 	if($_GET['function'] === "updateMedoc") {
-		// var_dump($_POST);
 		updateMedoc();
 	}
 
-
-
-
 	if($_GET['function'] === "updateMedocDenomination") {
-		// var_dump($_POST);
 		updateMedocDenomination();
 	}
 
 	if($_GET['function'] === "updateMedocForme") {
-		// var_dump($_POST);
 		updateMedocForme();
 	}
 
-	
-
 	if($_GET['function'] === "updateMedocSideEffect") {
-		// var_dump($_POST);
 		updateMedocSideEffect();
 	}
 }
